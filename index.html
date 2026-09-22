@@ -25,13 +25,13 @@
     .tag { padding:10px 13px; border:1px solid #ffffff35; border-radius:999px; background:#080a0f99; color:#fff; backdrop-filter:blur(12px); font-size:.83rem; }
     .controls, .hint { display:none; }
     .hint { display:none; }
-    .prompt { position:absolute; z-index:2; left:50%; bottom:78px; transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); color:#fff; text-align:center; font-size:clamp(1.5rem,3vw,3rem); font-weight:700; letter-spacing:.01em; text-shadow:0 3px 12px #000; }
-    .arrows { position:absolute; z-index:2; left:0; right:0; bottom:25px; display:grid; grid-template-columns:repeat(4,1fr); padding:0 16%; pointer-events:none; }
-    .arrow { color:var(--accent); text-align:center; font-size:clamp(1.5rem,3vw,3rem); line-height:1; font-weight:900; -webkit-text-stroke:1px var(--accent); animation:float 1.8s ease-in-out infinite; }
+    .prompt { position:absolute; z-index:2; left:50%; bottom:36px; transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); color:#fff; text-align:center; font-size:clamp(.85rem,1.35vw,1.35rem); font-weight:700; letter-spacing:.01em; text-shadow:0 2px 8px #000; }
+    .arrows { position:absolute; z-index:2; left:0; right:0; bottom:7px; display:grid; grid-template-columns:repeat(4,1fr); padding:0 13%; pointer-events:none; }
+    .arrow { color:var(--accent); text-align:center; font-size:clamp(1rem,1.8vw,1.8rem); line-height:1; font-weight:900; -webkit-text-stroke:1px var(--accent); animation:float 1.8s ease-in-out infinite; }
     .arrow:nth-child(2){animation-delay:.12s}.arrow:nth-child(3){animation-delay:.24s}.arrow:nth-child(4){animation-delay:.36s}
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(9px)} }
     code { color:#eaf3c1; }
-    @media (max-width:700px) { .prompt{bottom:60px;font-size:1.25rem}.arrows{bottom:20px;padding:0 10%}.arrow{font-size:1.8rem} }
+    @media (max-width:700px) { .prompt{bottom:30px;font-size:.85rem}.arrows{bottom:7px;padding:0 10%}.arrow{font-size:1.15rem} }
   </style>
 </head>
 <body>
@@ -44,7 +44,7 @@
     <section class="stage" aria-label="Reproductor de vídeo">
       <video id="player" autoplay loop muted playsinline preload="auto"></video>
       <div class="arrows" aria-hidden="true"><div class="arrow">↓</div><div class="arrow">↓</div><div class="arrow">↓</div><div class="arrow">↓</div></div>
-      <div class="prompt">Coge un producto</div>
+      <div class="prompt">Elige tu producto</div>
       <div class="overlay"><div class="now"><small id="rfidLabel">Esperando RFID</small><h2 id="videoTitle">Loop principal</h2></div><div class="tag" id="tagLabel">RFID 00</div></div>
     </section>
 
@@ -71,7 +71,7 @@
       player.playbackRate = 1;
       player.play().catch(()=>{});
     }
-    const translations = ['Coge un producto','Take a product','Prendi un prodotto','Pegue um produto','Prenez un produit','Nimm ein Produkt'];
+    const translations = ['Elige tu producto','Tria el teu producte','Choose your product','Scegli il tuo prodotto','Escolha o seu produto','Choisissez votre produit','Wählen Sie Ihr Produkt'];
     let translationIndex = 0;
     const prompt = document.querySelector('.prompt');
     setInterval(() => { translationIndex = (translationIndex + 1) % translations.length; prompt.textContent = translations[translationIndex]; }, 3000);
