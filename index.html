@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RFID Video Loop</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b0e14'/%3E%3Cpath d='M25 50h50M50 25v50' stroke='%23d7ff4f' stroke-width='10'/%3E%3C/svg%3E" />
+  <style>
+    :root { color-scheme: dark; --bg:#050706; --panel:#0d110e; --line:#394238; --muted:#c2c8c0; --accent:#00bb31; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:#050706; color:#fff; font-family:Arial,Helvetica,sans-serif; }
+    .shell { width:100%; min-height:100vh; margin:0 auto; padding:0; display:flex; flex-direction:column; justify-content:center; }
+    header { display:none; }
+    .eyebrow { margin:0 0 8px; color:var(--accent); font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; font-weight:800; }
+    h1 { margin:0; font-size:clamp(2rem,5vw,4.2rem); letter-spacing:-.06em; line-height:.95; }
+    .status { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:.9rem; white-space:nowrap; }
+    .dot { width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 18px var(--accent); }
+    .stage { position:relative; overflow:hidden; width:100%; aspect-ratio:16/9; min-height:360px; border:0; border-radius:0; background:#000; box-shadow:none; }
+    video { width:100%; height:100%; object-fit:cover; display:block; background:#111; }
+    .stage::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg,#0007 0%,transparent 30%,transparent 70%,#0009 100%); }
+    .overlay { display:none; }
+    .now { max-width:65%; }
+    .now small { color:var(--accent); font-size:.8rem; text-transform:uppercase; letter-spacing:.12em; font-weight:800; }
+    .now h2 { margin:7px 0 0; font-size:clamp(1.4rem,3vw,2.4rem); letter-spacing:-.04em; }
+    .tag { padding:10px 13px; border:1px solid #ffffff35; border-radius:999px; background:#080a0f99; color:#fff; backdrop-filter:blur(12px); font-size:.83rem; }
+    .controls { width:min(1180px,calc(100% - 40px)); margin:18px auto 24px; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    button { border:1px solid var(--line); border-radius:16px; background:var(--panel); color:#fff; padding:17px 16px; text-align:left; cursor:pointer; transition:.2s ease; }
+    button:hover, button:focus-visible { border-color:var(--accent); transform:translateY(-2px); outline:none; }
+    button.active { background:#182018; border-color:var(--accent); box-shadow:inset 0 0 0 1px #d7ff4f55; }
+    .rfid { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .rfid strong { display:block; font-size:1rem; }
+    .rfid span { display:block; margin-top:5px; color:var(--muted); font-size:.8rem; }
+    .pill { width:34px; height:34px; display:grid; place-items:center; border:1px solid #ffffff22; border-radius:50%; color:var(--accent); font-weight:800; }
+    .hint { display:none; }
+    .prompt { position:absolute; z-index:2; left:50%; bottom:92px; transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); color:#fff; text-align:center; font-size:clamp(1rem,2vw,1.35rem); font-weight:700; letter-spacing:.01em; text-shadow:0 2px 8px #000; }
+    .arrows { position:absolute; z-index:2; left:0; right:0; bottom:18px; display:grid; grid-template-columns:repeat(4,1fr); padding:0 8%; pointer-events:none; }
+    .arrow { color:var(--accent); text-align:center; font-size:clamp(2.5rem,6vw,5rem); line-height:1; font-weight:700; animation:float 1.8s ease-in-out infinite; }
+    .arrow:nth-child(2){animation-delay:.12s}.arrow:nth-child(3){animation-delay:.24s}.arrow:nth-child(4){animation-delay:.36s}
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(9px)} }
+    code { color:#eaf3c1; }
+    @media (max-width:700px) { .stage{min-height:240px}.controls{width:calc(100% - 24px);grid-template-columns:repeat(2,1fr)}button{padding:14px 12px} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div><p class="eyebrow">Instalación audiovisual</p><h1>RFID / video loop</h1></div>
+      <div class="status"><i class="dot"></i><span id="status">Sistema listo</span></div>
+    </header>
+
+    <section class="stage" aria-label="Reproductor de vídeo">
+      <video id="player" autoplay loop muted playsinline preload="auto"></video>
+      <div class="arrows" aria-hidden="true"><div class="arrow">↓</div><div class="arrow">↓</div><div class="arrow">↓</div><div class="arrow">↓</div></div>
+      <div class="prompt">Coge un producto</div>
+      <div class="overlay"><div class="now"><small id="rfidLabel">Esperando RFID</small><h2 id="videoTitle">Loop principal</h2></div><div class="tag" id="tagLabel">RFID 00</div></div>
+    </section>
+
+    <section class="controls" aria-label="Simulador de tarjetas RFID">
+      <button data-card="0" class="active"><div class="rfid"><div><strong>RFID 01</strong><span>Vídeo 01</span></div><div class="pill">01</div></div></button>
+      <button data-card="1"><div class="rfid"><div><strong>RFID 02</strong><span>Vídeo 02</span></div><div class="pill">02</div></div></button>
+      <button data-card="2"><div class="rfid"><div><strong>RFID 03</strong><span>Vídeo 03</span></div><div class="pill">03</div></div></button>
+      <button data-card="3"><div class="rfid"><div><strong>RFID 04</strong><span>Vídeo 04</span></div><div class="pill">04</div></div></button>
+    </section>
+    <p class="hint">Modo prueba: pulsa una tarjeta o usa las teclas <code>1</code>, <code>2</code>, <code>3</code> y <code>4</code>.</p>
+  </main>
+  <script>
+    // Sustituir estas rutas por los cuatro vídeos finales cuando estén disponibles.
+    const loopVideo = 'Videos/Video%20en%20bucle/jti-loop.mp4';
+    const videos = [
+      { id: 'RFID 01', title: 'Producto 01', src: 'videos/1.mp4' },
+      { id: 'RFID 02', title: 'Producto 02', src: 'videos/2.mp4' },
+      { id: 'RFID 03', title: 'Producto 03', src: 'videos/3.mp4' },
+      { id: 'RFID 04', title: 'Producto 04', src: 'videos/4.mp4' }
+    ];
+    const player = document.querySelector('#player');
+    const status = document.querySelector('#status');
+    function selectCard(index) {
+      const item = videos[index];
+      document.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===index));
+      document.querySelector('#rfidLabel').textContent = item.id;
+      document.querySelector('#tagLabel').textContent = item.id;
+      document.querySelector('#videoTitle').textContent = item.title;
+      status.textContent = `RFID detectado · ${item.id}`;
+      player.loop = false;
+      player.src = item.src;
+      player.playbackRate = 1;
+      player.play().catch(()=>{});
+    }
+    document.querySelectorAll('[data-card]').forEach(button => button.addEventListener('click',()=>selectCard(Number(button.dataset.card))));
+    window.addEventListener('keydown', e => { const index = Number(e.key)-1; if(index>=0 && index<4) selectCard(index); });
+    player.addEventListener('ended', () => {
+      player.src = loopVideo;
+      player.loop = true;
+      player.playbackRate = .78;
+      document.querySelector('#rfidLabel').textContent = 'Esperando RFID';
+      document.querySelector('#tagLabel').textContent = 'RFID 00';
+      document.querySelector('#videoTitle').textContent = 'Loop principal';
+      status.textContent = 'Sistema listo';
+      document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      player.play().catch(()=>{});
+    });
+    player.src = loopVideo;
+    player.loop = true;
+    player.playbackRate = .78;
+    player.play().catch(()=>{});
+    // API sencilla para el hardware: window.selectRFID(0), window.selectRFID(1), etc.
+    window.selectRFID = selectCard;
+  </script>
+</body>
+</html>
